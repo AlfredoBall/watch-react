@@ -1,0 +1,93 @@
+name: Publish Watch React
+
+on:
+  push:
+    tags:
+      - "watch-react-v*.*.*"
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  validate:
+    name: Validate release
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          package-manager-cache: false
+
+      - name: Validate tag
+        shell: bash
+        run: |
+          TAG_NAME="${GITHUB_REF_NAME}"
+
+          if [[ ! "$TAG_NAME" =~ ^watch-react-v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Invalid Watch React release tag: $TAG_NAME"
+            echo "Expected: watch-react-vX.Y.Z"
+            exit 1
+          fi
+
+          TAG_VERSION="${TAG_NAME#watch-react-v}"
+          PACKAGE_VERSION="$(node -p "require('./package.json').version")"
+
+          echo "Tag version:     $TAG_VERSION"
+          echo "Package version: $PACKAGE_VERSION"
+
+          if [[ "$TAG_VERSION" != "$PACKAGE_VERSION" ]]; then
+            echo "Tag version does not match package.json version."
+            exit 1
+          fi
+
+  test:
+    name: Test
+    needs: validate
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          package-manager-cache: false
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Test
+        run: npm test
+
+  publish:
+    name: Publish
+    needs: test
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          registry-url: "https://registry.npmjs.org"
+          package-manager-cache: false
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Publish
+        run: npm publish --access public
