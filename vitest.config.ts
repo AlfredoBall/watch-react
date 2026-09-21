@@ -5,10 +5,5 @@ export default defineConfig({
     environment: "jsdom",
     globals: false,
     clearMocks: true,
-    server: {
-      deps: {
-        inline: ["@alfredoball/watch"],
-      },
-    },
   },
 });
