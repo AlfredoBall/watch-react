@@ -15,7 +15,7 @@ import {
 
 import {
     WatchContext,
-} from "../WatchContext";
+} from "../WatchContext.ts";
 
 export type WatchTime<
     TState extends object,
